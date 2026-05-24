@@ -1,69 +1,154 @@
-//myadder.c
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
+#define CYLINDERS 5000
+#define N 10
+
+// ---------------- Sort Function ----------------
+void sort(int a[], int n) {
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - i - 1; j++) {
+            if (a[j] > a[j + 1]) {
+                int t = a[j];
+                a[j] = a[j + 1];
+                a[j + 1] = t;
+            }
+        }
+    }
+}
+
+// ---------------- C-SCAN Algorithm ----------------
+int cscan(int req[], int n, int head, char dir) {
+    int a[N];
+
+    for (int i = 0; i < n; i++)
+        a[i] = req[i];
+
+    sort(a, n);
+
+    int total = 0;
+    int cur = head;
+
+    printf("\nC-SCAN Order: %d ", cur);
+
+    // Move Right
+    if (dir == 'R' || dir == 'r') {
+
+        for (int i = 0; i < n; i++) {
+            if (a[i] >= head) {
+                total += abs(cur - a[i]);
+                cur = a[i];
+                printf("-> %d ", cur);
+            }
+        }
+
+        // Move to end
+        if (cur != CYLINDERS - 1) {
+            total += abs(cur - (CYLINDERS - 1));
+            cur = CYLINDERS - 1;
+            printf("-> %d ", cur);
+        }
+
+        // Jump to beginning
+        total += abs(cur - 0);
+        cur = 0;
+        printf("-> %d ", cur);
+
+        // Continue remaining requests
+        for (int i = 0; i < n; i++) {
+            if (a[i] < head) {
+                total += abs(cur - a[i]);
+                cur = a[i];
+                printf("-> %d ", cur);
+            }
+        }
+    }
+
+    // Move Left
+    else {
+
+        for (int i = n - 1; i >= 0; i--) {
+            if (a[i] <= head) {
+                total += abs(cur - a[i]);
+                cur = a[i];
+                printf("-> %d ", cur);
+            }
+        }
+
+        // Move to beginning
+        total += abs(cur - 0);
+        cur = 0;
+        printf("-> %d ", cur);
+
+        // Jump to end
+        total += abs(cur - (CYLINDERS - 1));
+        cur = CYLINDERS - 1;
+        printf("-> %d ", cur);
+
+        // Continue remaining requests
+        for (int i = n - 1; i >= 0; i--) {
+            if (a[i] > head) {
+                total += abs(cur - a[i]);
+                cur = a[i];
+                printf("-> %d ", cur);
+            }
+        }
+    }
+
+    return total;
+}
+
+// ---------------- MAIN ----------------
 int main(int argc, char *argv[]) {
-    if (argc != 3) {
-        printf("Usage: %s <num1> <num2>\n", argv[0]);
+
+    if (argc != 2) {
+        printf("Usage: %s <initial_head_position>\n", argv[0]);
         return 1;
     }
 
-    int a = atoi(argv[1]);
-    int b = atoi(argv[2]);
-    int sum = a + b;
+    int head = atoi(argv[1]);
 
-    printf("Sum of %d and %d is %d\n", a, b, sum);
-
-    return 0;
-}
-
-==========================================
-
-/*gcc myadder.c -o myadder
-./myadder 10 20*/
-
-==========================================
-
-//fork_exec.c
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-int main() {
-    pid_t pid;
-    pid = fork();   // Create a child process
-
-    if (pid < 0) {
-        perror("Fork failed");
-        exit(1);
-    } 
-    else if (pid == 0) {
-        // Child process
-        printf("Child process (PID: %d) executing myadder...\n", getpid());
-
-        // Arguments for myadder
-        char *args[] = {"./myadder", "10", "20", NULL};
-
-        // Replace current process with myadder
-        execvp(args[0], args);
-
-        // execvp returns only if it fails
-        perror("execvp failed");
-        exit(1);
-    } 
-    else {
-        // Parent process
-        printf("Parent process (PID: %d) created child (PID: %d)\n", getpid(), pid);
-        wait(NULL);  // Wait for child to finish
-        printf("Child completed execution.\n");
+    if (head < 0 || head >= CYLINDERS) {
+        printf("Head position must be between 0 and 4999\n");
+        return 1;
     }
 
+    char direction;
+
+    printf("Enter direction (L for Left, R for Right): ");
+    scanf(" %c", &direction);
+
+    int req[N];
+
+    srand(time(NULL));
+
+    // Generate random requests
+    for (int i = 0; i < N; i++)
+        req[i] = rand() % CYLINDERS;
+
+    printf("\nDisk Cylinders: 0 - 4999\n");
+    printf("Initial Head Position: %d\n", head);
+
+    printf("\nGenerated Requests:\n");
+
+    for (int i = 0; i < N; i++)
+        printf("%d ", req[i]);
+
+    printf("\n");
+
+    // Run C-SCAN
+    int movement = cscan(req, N, head, direction);
+
+    // Output
+    printf("\n\nTotal Head Movement = %d\n", movement);
+
     return 0;
 }
 
-==========================================
 
-/*gcc fork_exec.c -o fork_exec
-./fork_exec*/
+1.Compile
+gcc cscan.c -o cscan
 
+2.Run
+./cscan 2000
